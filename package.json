@@ -1,0 +1,19 @@
+{
+  "name": "silent-mode-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "mobile",
+    "shared"
+  ],
+  "scripts": {
+    "start:backend": "npm run start --workspace=backend",
+    "start:mobile": "npm run start --workspace=mobile",
+    "dev:backend": "npm run dev --workspace=backend",
+    "clean": "rm -rf node_modules && rm -rf */node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

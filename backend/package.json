@@ -1,0 +1,40 @@
+{
+    "name": "@silentmode/backend",
+    "version": "1.0.0",
+    "description": "Backend API for SilentMode",
+    "main": "dist/index.js",
+    "scripts": {
+        "start": "node dist/index.js",
+        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "build": "tsc",
+        "lint": "eslint src/**/*.ts",
+        "test": "jest"
+    },
+    "prisma": {
+        "seed": "ts-node prisma/seed.ts"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.22.0",
+        "bcrypt": "^5.1.0",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "express-rate-limit": "^8.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "multer": "^2.0.2"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^5.0.0",
+        "@types/bcryptjs": "^2.4.6",
+        "@types/cors": "^2.8.13",
+        "@types/express": "^4.17.17",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/multer": "^2.0.0",
+        "@types/node": "^20.4.5",
+        "prisma": "^5.22.0",
+        "ts-node": "^10.9.2",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.1.6"
+    }
+}

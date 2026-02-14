@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  contents     Content[]
+  votes        Vote[]
+  hashtagFollows HashtagFollow[]
+  superUpvoteUsedToday Boolean @default(false)
+  lastSuperUpvoteDate DateTime?
+
+  // Settings
+  notifyOnRemix         Boolean   @default(true)
+  notifyOnQAAnswer      Boolean   @default(true)
+  hideArchivedPosts     Boolean   @default(false)
+  autoLoadImages        Boolean   @default(true)
+  showNSFW              Boolean   @default(false)
+  blurNSFW              Boolean   @default(true)
+
+  collections  Collection[]
+  saves        SavedContent[]
+  qaAnswers       QAAnswer[]
+  qaAnswerVotes   QAAnswerVote[]
+  notifications   Notification[]
+}
+
+
+model HashtagFollow {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  hashtag   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, hashtag])
+}
+
+model Content {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  contentType String // "text", "image", "video"
+  title       String?
+  description String?
+  mainHashtag String?
+  hashtags    String   @default("[]") // Stored as JSON string due to SQLite limitations
+  mediaUrl    String?
+  mediaUrls   String   @default("[]") // JSON array of image URLs
+  score       Float    @default(0)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  votes       Vote[]
+  isArchived  Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+  editedAt    DateTime? // Manual edit timestamp
+  isNSFW      Boolean  @default(false)
+  hiddenBy    String   @default("[]")  // JSON array of user IDs who hid this
+  savedBy     String   @default("[]")  // JSON array of user IDs who saved this
+  reportedBy  String   @default("[]")  // JSON array of user IDs who reported this
+  saves       SavedContent[]
+  answers     QAAnswer[]
+  notifications Notification[]
+
+  
+  // NEW: Remix fields
+  remixedFromId String?   // ID of original content (null if original)
+  remixCount    Int       @default(0)  // How many times this was remixed
+  
+  // Remix relations
+  remixedFrom   Content?  @relation("ContentRemixes", fields: [remixedFromId], references: [id], onDelete: SetNull)
+  remixes       Content[] @relation("ContentRemixes")
+  
+  @@index([remixedFromId])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  contentId String
+  content   Content  @relation(fields: [contentId], references: [id])
+  voteType  String // "up", "down"
+  createdAt DateTime @default(now())
+
+  @@unique([userId, contentId])
+}
+
+model Collection {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  saves     SavedContent[]
+}
+
+model SavedContent {
+  id           String     @id @default(uuid())
+  userId       String
+  contentId    String
+  collectionId String?
+  note         String?
+  savedAt      DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id])
+  content      Content    @relation(fields: [contentId], references: [id])
+  collection   Collection? @relation(fields: [collectionId], references: [id])
+  @@unique([userId, contentId])
+}
+
+model QAAnswer {
+  id          String    @id @default(uuid())
+  contentId   String
+  userId      String    // Anonymous
+  text        String
+  score       Float     @default(0)
+  createdAt   DateTime  @default(now())
+  
+  content     Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes       QAAnswerVote[]
+  
+  @@unique([contentId, userId]) // One answer per user per Q&A
+  @@index([contentId, score])
+}
+
+model QAAnswerVote {
+  id          String    @id @default(uuid())
+  answerId    String
+  userId      String
+  contentId   String       // For constraint: one vote per user per Q&A
+  voteType    String    // "upvote" or "downvote"
+  
+  answer      QAAnswer  @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, contentId]) // One vote per user per entire Q&A
+  @@index([answerId])
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String    // Who receives the notification
+  type        String    // "remix" or "qa_answer"
+  contentId   String    // Related content
+  actorId     String?   // Who triggered it (optional, for privacy)
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
